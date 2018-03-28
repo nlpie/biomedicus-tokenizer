@@ -77,6 +77,7 @@ public class Tokenizer {
         }
         subIt = null;
         if (index > string.length()) {
+          next = null;
           return;
         } else if (index == string.length()) {
           subIt = tokenizer.finish().iterator();

@@ -7,10 +7,12 @@
 package edu.umn.biomedicus.tokenization;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 
 import edu.umn.biomedicus.tokenization.Tokenizer.StandardTokenResult;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import org.testng.annotations.Test;
 
@@ -40,6 +42,30 @@ public class TokenizerTest {
         new StandardTokenResult(71, 72),
         new StandardTokenResult(72, 80)
     ));
+  }
+
+  @Test
+  public void testIterator() throws Exception {
+    Iterator<TokenResult> iterator = Tokenizer.tokenize(SENTENCE).iterator();
+    assertEquals(iterator.next(), new StandardTokenResult(0, 4));
+    assertEquals(iterator.next(), new StandardTokenResult(5, 9));
+    assertEquals(iterator.next(), new StandardTokenResult(9, 11));
+    assertEquals(iterator.next(), new StandardTokenResult(12, 17));
+    assertEquals(iterator.next(), new StandardTokenResult(18, 22));
+    assertEquals(iterator.next(), new StandardTokenResult(23, 30));
+    assertEquals(iterator.next(), new StandardTokenResult(31, 35));
+    assertEquals(iterator.next(), new StandardTokenResult(36, 39));
+    assertEquals(iterator.next(), new StandardTokenResult(40, 49));
+    assertEquals(iterator.next(), new StandardTokenResult(50, 51));
+    assertEquals(iterator.next(), new StandardTokenResult(51, 57));
+    assertEquals(iterator.next(), new StandardTokenResult(57, 58));
+    assertEquals(iterator.next(), new StandardTokenResult(58, 62));
+    assertEquals(iterator.next(), new StandardTokenResult(62, 63));
+    assertEquals(iterator.next(), new StandardTokenResult(64, 66));
+    assertEquals(iterator.next(), new StandardTokenResult(67, 71));
+    assertEquals(iterator.next(), new StandardTokenResult(71, 72));
+    assertEquals(iterator.next(), new StandardTokenResult(72, 80));
+    assertFalse(iterator.hasNext());
   }
 
   @Test
