@@ -165,4 +165,17 @@ public class TokenizerTest {
 
     assertEquals(list, Collections.singletonList(new StandardTokenResult(0, 4)));
   }
+
+  @Test
+  public void testDontSplitCommaAfterParen() throws Exception {
+    List<TokenResult> list = Tokenizer.allTokens("(something), something");
+
+    assertEquals(list, Arrays.asList(
+        new StandardTokenResult(0, 1),
+        new StandardTokenResult(1, 10),
+        new StandardTokenResult(10, 11),
+        new StandardTokenResult(11, 12),
+        new StandardTokenResult(13, 22)
+    ));
+  }
 }

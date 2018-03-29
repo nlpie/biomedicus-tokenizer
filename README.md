@@ -1,7 +1,7 @@
 
 [![](https://travis-ci.org/nlpie/biomedicus-measures.svg?branch=master)](https://travis-ci.org/nlpie/biomedicus-measures)
 
-# BioMedICUS Measures
+# BioMedICUS Tokenizer
 
 A lightweight (small and dependency-free) Java 8 library for Penn-like tokenization. This was 
 developed as a stand-alone component of [BioMedICUS](http://nlpie.github.io/biomedicus/), a 
@@ -26,7 +26,7 @@ Alternatively, download the .jar and include that in your libraries.
 
 ## Javadoc
 
-You can find the api documentation for this project [here](https://nlpie.github.io/biomedicus-measures/site/apidocs/index.html)
+You can find the api documentation for this project [here](https://nlpie.github.io/biomedicus-tokenization/site/apidocs/index.html)
 
 ## Tokenizing text
 

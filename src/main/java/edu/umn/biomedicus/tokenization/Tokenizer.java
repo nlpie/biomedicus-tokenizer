@@ -36,13 +36,12 @@ public class Tokenizer {
   private static final Pattern END_BREAKS = Pattern.compile(
       "(?<=('[SsDdMm]|n't|N'T|'ll|'LL|'ve|'VE|'re|'RE|'|’|,))$"
   );
-  private int startIndex = -1;
   private static final Pattern NUMBER_WORD = Pattern
       .compile("[-]?[0-9.xX]*[0-9]++(?<suffix>[\\p{Alpha}]++)$");
   private static final Pattern NUMBER_X = Pattern
       .compile(".*?[0-9.]*[0-9]++([xX][0-9.]*[0-9]++)+$");
   private final StringBuilder word = new StringBuilder();
-
+  private int startIndex = -1;
   private List<TokenResult> results;
 
   public static List<TokenResult> allTokens(String string) {
@@ -172,7 +171,9 @@ public class Tokenizer {
         addResult(start, start + startMatcher.end());
         start = start + startMatcher.end();
       } else {
-        breakEnds(start, end);
+        if (start != end) {
+          breakEnds(start, end);
+        }
         break;
       }
     }
@@ -189,7 +190,6 @@ public class Tokenizer {
       }
     } else {
       breakUnitsOfTheEndsOfNumbers(start, end);
-
     }
   }
 
