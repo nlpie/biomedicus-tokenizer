@@ -1,7 +1,17 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota - All Rights Reserved
- * Unauthorized Copying of this file, via any medium is strictly prohibited
- * Proprietary and Confidential
+ * Copyright (c) 2018 Regents of the University of Minnesota.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package edu.umn.biomedicus.tokenization;
@@ -22,43 +32,107 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+/**
+ * Performs tokenization on text according to penn-treebank-like word tokenization rules.
+ * Doesn't split trailing periods. Splits units like 10cm. Splits dimensions like 10x14.
+ *
+ * <p>"Performs tokenization of text according to penn - treebank - like word tokenization rules.
+ * Does n't split trailing periods. Splits units like 10 cm. Splits dimensions like 10 x 14."</p>
+ *
+ * <p>Usage:</p>
+ * <pre>
+ *   {@code
+ *   String text = "An example sentence.";
+ *   for (TokenResult result : Tokenizer.tokenize(text)) {
+ *     CharSequence tokenText = result.text(text);
+ *   }
+ *   }
+ * </pre>
+ *
+ * <p>
+ *   If you want to use a different list of units than the one built in, you can supply a
+ *   file path using the system property "biomedicus.tokenizer.unitsListPath". Otherwise, you can
+ *   put a file "unitsList.txt" on the "edu.umn.biomedicus.tokenization" classpath.
+ * </p>
+ *
+ * <p>
+ *   Instances of this class are stateful do not support parallel processing. If you plan on
+ *   using the stateful instance methods {@link #advance(char, int)} and {@link #finish()} use
+ *   multiple instances of this class to support parallelism, otherwise use the stateless static
+ *   class methods {@link #allTokens(CharSequence)} and {@link #tokenize(CharSequence)}.
+ * </p>
+ *
+ * <p>
+ *   If using {@link #advance(char, int)} and {@link #finish()} the instance is reusable.
+ * </p>
+ *
+ * <p>
+ *   Implementation details: advances one character at a time until it encounters a word separator
+ *   &mdash;i.e. a whitespace character like a space, tab, or newline&mdash;then uses a set of
+ *   regex-based rules to split words into multiple tokens.
+ * </p>
+ */
 public class Tokenizer {
 
   private static final List<String> UNITS = loadUnitsList();
+
   private static final Pattern MID_BREAKS = Pattern.compile(
-      // math and connector symbols and punctuation (except . , ' ’ - # $), dash following anything or before a letter
+      // math and connector symbols and punctuation (except . , ' ’ - # $), dash following anything
+      // or before a letter
       "[\\p{Sm}\\p{Sk}\\p{P}&&[^.,'’\\-#$]]|(?<=[^\\p{Z}])-|-(?=[\\p{L}])"
           // comma between two characters at least one of which is not a number
           + "|(?<=[^\\p{N}]),(?=[^\\p{N}])|(?<=[^\\p{N}]),(?=[\\p{N}])|(?<=[\\p{N}]),(?=[^\\p{N}])"
   );
+
   private static final Pattern START_BREAKS = Pattern.compile("^[',’]");
+
   private static final Pattern X = Pattern.compile("[xX]");
+
   private static final Pattern END_BREAKS = Pattern.compile(
       "(?<=('[SsDdMm]|n't|N'T|'ll|'LL|'ve|'VE|'re|'RE|'|’|,))$"
   );
+
   private static final Pattern NUMBER_WORD = Pattern
-      .compile("[-]?[0-9.xX]*[0-9]++(?<suffix>[\\p{Alpha}]++)$");
+      .compile("[-]?[0-9.xX]*[0-9.]++([\\p{Alpha}]++)[.]?$");
+
   private static final Pattern NUMBER_X = Pattern
-      .compile(".*?[0-9.]*[0-9]++([xX][0-9.]*[0-9]++)+$");
+      .compile(".*?[0-9.]*[0-9]++([xX][0-9.]*[0-9.]++)+$");
+
   private final StringBuilder word = new StringBuilder();
+
+  private List<String> units;
+
   private int startIndex = -1;
+
   private List<TokenResult> results;
 
-  public static List<TokenResult> allTokens(String string) {
-    List<TokenResult> results = new ArrayList<>();
-
-    Tokenizer tokenizer = new Tokenizer();
-
-    for (int i = 0; i < string.length(); i++) {
-      results.addAll(tokenizer.advance(string.charAt(i), i));
+  /**
+   * Tokenizes the text, returning a new list of all the tokens in the string. Don't change the
+   * text during tokenization, this method doesn't make a protective copy.
+   *
+   * @param text a CharSequence to tokenize
+   *
+   * @return List containing all of the tokens in the text
+   */
+  @Nonnull
+  public static List<TokenResult> allTokens(@Nonnull CharSequence text) {
+    ArrayList<TokenResult> tokenResults = new ArrayList<>();
+    for (TokenResult result : tokenize(text)) {
+      tokenResults.add(result);
     }
-
-    results.addAll(tokenizer.finish());
-
-    return results;
+    return tokenResults;
   }
 
-  public static Iterable<TokenResult> tokenize(String string) {
+  /**
+   * Returns an iterable that creates an iterator that lazily tokenizes the text, returning the
+   * tokens in the text one-by-one. Don't change the text during tokenization, this method doesn't
+   * make a protective copy.
+   *
+   * @param text a CharSequence to tokenize
+   * @return iterable that tokenizes during iteration.
+   */
+  @Nonnull
+  public static Iterable<TokenResult> tokenize(@Nonnull CharSequence text) {
     return () -> new Iterator<TokenResult>() {
       int index = 0;
       Iterator<TokenResult> subIt = null;
@@ -75,14 +149,14 @@ public class Tokenizer {
           return;
         }
         subIt = null;
-        if (index > string.length()) {
+        if (index > text.length()) {
           next = null;
           return;
-        } else if (index == string.length()) {
+        } else if (index == text.length()) {
           subIt = tokenizer.finish().iterator();
           index++;
         } else {
-          List<TokenResult> results = tokenizer.advance(string.charAt(index), index++);
+          List<TokenResult> results = tokenizer.advance(text.charAt(index), index++);
           subIt = results.size() > 0 ? results.iterator() : null;
         }
         advance();
@@ -102,6 +176,46 @@ public class Tokenizer {
     };
   }
 
+  /**
+   * Adds a unit to the default list of units to break off the end of words. This method affects the
+   * global state of this class, all instances that have been created using the default
+   * {@link Tokenizer#Tokenizer()} constructor and all future instances creating any constructors,
+   * use with caution.
+   *
+   * @param unit the unit
+   */
+  public static void addUnit(String unit) {
+    if (!UNITS.contains(unit)) {
+      UNITS.add(unit);
+    }
+  }
+
+  /**
+   * Removes a unit from the default list of units to break off the end of words. This method
+   * affects the global state of this class, all instances that have been created using the default
+   * {@link Tokenizer#Tokenizer()} constructor and all future instances creating any constructors,
+   * use with caution.
+   *
+   * @param unit the unit
+   */
+  public static void removeUnit(String unit) {
+    UNITS.remove(unit);
+  }
+
+  /**
+   * Replaces the default list of units with a new list of units. This method
+   * affects the global state of this class, all instances that have been created using the default
+   * {@link Tokenizer#Tokenizer()} constructor and all future instances creating any constructors,
+   * use with caution. This method is also not thread-safe, there is a possibility that any
+   * currently working instances may check a (temporarily) empty units list.
+   *
+   * @param newUnits the new list of units
+   */
+  public static void replaceUnits(List<String> newUnits) {
+    UNITS.clear();
+    UNITS.addAll(newUnits);
+  }
+
   private static List<String> loadUnitsList() {
     String unitListPath = System.getProperty("biomedicus.tokenizer.unitsListPath");
     if (unitListPath != null) {
@@ -112,10 +226,44 @@ public class Tokenizer {
       }
     }
     InputStream is = Tokenizer.class.getResourceAsStream("unitsList.txt");
-    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-    return reader.lines().collect(Collectors.toList());
+    return new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.toList());
   }
 
+  /**
+   * Default constructor, uses the built-in global state units list.
+   */
+  public Tokenizer() {
+    units = UNITS;
+  }
+
+  /**
+   * Creates a tokenizer which splits an alternate list of units from the ends of numbers.
+   *
+   * @param units the units to split off the end of numbers.
+   */
+  public Tokenizer(List<String> units) {
+    this.units = units;
+  }
+
+  /**
+   * Creates a tokenizer which will split additional or less units from the ends of numbers.
+   *
+   * @param additionalUnits any additional units to split
+   * @param ignoredUnits any units not to split
+   */
+  public Tokenizer(List<String> additionalUnits, List<String> ignoredUnits) {
+    units = new ArrayList<>(UNITS);
+    units.addAll(additionalUnits);
+    units.removeAll(ignoredUnits);
+  }
+
+  /**
+   * Advances the tokenizer by one token, returning any tokens finalized in a list.
+   *
+   * @param ch the character to advance
+   * @param index the index of the character
+   * @return list of any tokens created from a single "word" (text between word breaks)
+   */
   @Nonnull
   public List<TokenResult> advance(char ch, int index) {
     int type = Character.getType(ch);
@@ -132,6 +280,12 @@ public class Tokenizer {
     return Collections.emptyList();
   }
 
+  /**
+   * Finalizes the tokenizer, returning any tokens from the last word (if there is one) in the
+   * state.
+   *
+   * @return list of any last tokens
+   */
   @Nonnull
   public List<TokenResult> finish() {
     return breakWord();
@@ -197,10 +351,10 @@ public class Tokenizer {
     CharSequence tokenText = word.subSequence(start, end);
     Matcher matcher = NUMBER_WORD.matcher(tokenText);
     if (matcher.matches()) {
-      String suffix = matcher.group("suffix");
+      String suffix = matcher.group(1);
       if (suffix != null && UNITS.contains(suffix.toLowerCase())) {
-        splitNumbersByX(start, end - suffix.length());
-        addResult(end - suffix.length(), end);
+        splitNumbersByX(start, start + matcher.start(1));
+        addResult(start + matcher.start(1), end);
         return;
       }
     }
@@ -263,7 +417,6 @@ public class Tokenizer {
 
     @Override
     public int hashCode() {
-
       return Objects.hash(startIndex, endIndex);
     }
   }

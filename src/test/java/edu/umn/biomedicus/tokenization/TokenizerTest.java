@@ -1,7 +1,17 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota - All Rights Reserved
- * Unauthorized Copying of this file, via any medium is strictly prohibited
- * Proprietary and Confidential
+ * Copyright (c) 2018 Regents of the University of Minnesota.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package edu.umn.biomedicus.tokenization;
@@ -176,6 +186,28 @@ public class TokenizerTest {
         new StandardTokenResult(10, 11),
         new StandardTokenResult(11, 12),
         new StandardTokenResult(13, 22)
+    ));
+  }
+
+  @Test
+  public void testSentenceEndNumberX() throws Exception {
+    List<TokenResult> list = Tokenizer.allTokens("Blah 4x4.5.");
+
+    assertEquals(list, Arrays.asList(
+        new StandardTokenResult(0, 4),
+        new StandardTokenResult(5, 6),
+        new StandardTokenResult(6, 7),
+        new StandardTokenResult(7, 11)
+    ));
+  }
+
+  @Test
+  public void testSentenceEndingUnit() throws Exception {
+    List<TokenResult> list = Tokenizer.allTokens("2.5cm.");
+
+    assertEquals(list, Arrays.asList(
+        new StandardTokenResult(0, 3),
+        new StandardTokenResult(3, 6)
     ));
   }
 }
