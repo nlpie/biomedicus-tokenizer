@@ -16,22 +16,22 @@
 
 package edu.umn.biomedicus.tokenization;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import edu.umn.biomedicus.tokenization.Tokenizer.StandardTokenResult;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-public class TokenizerTest {
+class TokenizerTest {
 
-  public static final String SENTENCE = "This test's logic will confirm that the tokenizer (P.T.B.-like) is well-behaved.";
+  private static final String SENTENCE = "This test's logic will confirm that the tokenizer (P.T.B.-like) is well-behaved.";
 
   @Test
-  public void testWords() {
+  void testWords() {
     assertEquals(Tokenizer.allTokens(SENTENCE), Arrays.asList(
         new StandardTokenResult(0, 4),
         new StandardTokenResult(5, 9),
@@ -55,7 +55,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testIterator() throws Exception {
+  void testIterator() {
     Iterator<TokenResult> iterator = Tokenizer.tokenize(SENTENCE).iterator();
     assertEquals(iterator.next(), new StandardTokenResult(0, 4));
     assertEquals(iterator.next(), new StandardTokenResult(5, 9));
@@ -79,7 +79,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testDoesSplitZWSP() {
+  void testDoesSplitZWSP() {
     List<TokenResult> results = Tokenizer.allTokens(
         "This sentence has some zero-width spaces.\u200b\u200b"
     );
@@ -89,21 +89,21 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testWordsEmptySentence() {
+  void testWordsEmptySentence() {
     List<TokenResult> list = Tokenizer.allTokens("");
 
     assertEquals(list.size(), 0);
   }
 
   @Test
-  public void testWordsWhitespaceSentence() {
+  void testWordsWhitespaceSentence() {
     List<TokenResult> list = Tokenizer.allTokens("\n \t   ");
 
     assertEquals(list.size(), 0);
   }
 
   @Test
-  public void testDoNotSplitCommaNumbers() {
+  void testDoNotSplitCommaNumbers() {
     List<TokenResult> spanList = Tokenizer.allTokens("42,000,000");
 
     assertEquals(spanList.size(), 1);
@@ -112,7 +112,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSplitTrailingComma() {
+  void testSplitTrailingComma() {
     List<TokenResult> list = Tokenizer.allTokens("first,");
 
     assertEquals(list.size(), 2);
@@ -121,7 +121,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSplitPercent() {
+  void testSplitPercent() {
     List<TokenResult> spans = Tokenizer.allTokens("42%");
 
     assertEquals(spans.size(), 2);
@@ -130,7 +130,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testParenSplitMid() {
+  void testParenSplitMid() {
     List<TokenResult> spans = Tokenizer.allTokens("abc(asf");
 
     assertEquals(spans.size(), 3);
@@ -140,7 +140,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSplitUnitsOffTheEnd() {
+  void testSplitUnitsOffTheEnd() {
     List<TokenResult> list = Tokenizer.allTokens("2.5cm");
 
     assertEquals(list.size(), 2);
@@ -149,7 +149,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSingleQuote() {
+  void testSingleQuote() {
     List<TokenResult> list = Tokenizer.allTokens("'xyz");
 
     assertEquals(list.size(), 2);
@@ -158,7 +158,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSplitNumbersSeparatedByX() throws Exception {
+  void testSplitNumbersSeparatedByX() {
     List<TokenResult> list = Tokenizer.allTokens("2x3x4");
 
     assertEquals(list.size(), 5);
@@ -170,14 +170,14 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testDontSplitEndOfSentenceAM() throws Exception {
+  void testDontSplitEndOfSentenceAM() {
     List<TokenResult> list = Tokenizer.allTokens("a.m.");
 
     assertEquals(list, Collections.singletonList(new StandardTokenResult(0, 4)));
   }
 
   @Test
-  public void testDontSplitCommaAfterParen() throws Exception {
+  void testDontSplitCommaAfterParen() {
     List<TokenResult> list = Tokenizer.allTokens("(something), something");
 
     assertEquals(list, Arrays.asList(
@@ -190,7 +190,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSentenceEndNumberX() throws Exception {
+  void testSentenceEndNumberX() {
     List<TokenResult> list = Tokenizer.allTokens("Blah 4x4.5.");
 
     assertEquals(list, Arrays.asList(
@@ -202,7 +202,7 @@ public class TokenizerTest {
   }
 
   @Test
-  public void testSentenceEndingUnit() throws Exception {
+  void testSentenceEndingUnit() {
     List<TokenResult> list = Tokenizer.allTokens("2.5cm.");
 
     assertEquals(list, Arrays.asList(
