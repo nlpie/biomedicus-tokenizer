@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +53,10 @@ import javax.annotation.Nonnull;
  * <p>
  *   If you want to use a different list of units than the one built in, you can supply a
  *   file path using the system property "biomedicus.tokenizer.unitsListPath". Otherwise, you can
- *   put a file "unitsList.txt" on the "edu.umn.biomedicus.tokenization" classpath.
+ *   put a file "unitsList.txt" on the "edu.umn.biomedicus.tokenization" classpath, modify the
+ *   existing static units using {@link #replaceUnits(List)}, {@link #removeUnit(String)}, and
+ *   {@link #addUnit(String)}, or create Tokenizer with a custom units list:
+ *   {@link #Tokenizer(List)}, {@link #Tokenizer(List, List)}.
  * </p>
  *
  * <p>
@@ -73,6 +77,8 @@ import javax.annotation.Nonnull;
  * </p>
  */
 public class Tokenizer {
+
+  private static final int MAX_ITER = 10_000;
 
   private static final List<String> UNITS = loadUnitsList();
 
@@ -133,6 +139,10 @@ public class Tokenizer {
    */
   @Nonnull
   public static Iterable<TokenResult> tokenize(@Nonnull CharSequence text) {
+    if (text == null) {
+      throw new IllegalArgumentException("Null text");
+    }
+
     return () -> new Iterator<TokenResult>() {
       int index = 0;
       Iterator<TokenResult> subIt = null;
@@ -144,22 +154,23 @@ public class Tokenizer {
       }
 
       void advance() {
-        if (subIt != null && subIt.hasNext()) {
-          next = subIt.next();
-          return;
+        for (int i = 0; i < MAX_ITER; i++) {
+          if (subIt != null && subIt.hasNext()) {
+            next = subIt.next();
+            return;
+          }
+          subIt = null;
+          if (index > text.length()) {
+            next = null;
+            return;
+          } else if (index == text.length()) {
+            subIt = tokenizer.finish().iterator();
+            index++;
+          } else {
+            List<TokenResult> results = tokenizer.advance(text.charAt(index), index++);
+            subIt = results.size() > 0 ? results.iterator() : null;
+          }
         }
-        subIt = null;
-        if (index > text.length()) {
-          next = null;
-          return;
-        } else if (index == text.length()) {
-          subIt = tokenizer.finish().iterator();
-          index++;
-        } else {
-          List<TokenResult> results = tokenizer.advance(text.charAt(index), index++);
-          subIt = results.size() > 0 ? results.iterator() : null;
-        }
-        advance();
       }
 
       @Override
@@ -169,6 +180,10 @@ public class Tokenizer {
 
       @Override
       public TokenResult next() {
+        if (next == null) {
+          throw new NoSuchElementException("No next token.");
+        }
+
         TokenResult temp = next;
         advance();
         return temp;
@@ -381,7 +396,9 @@ public class Tokenizer {
   }
 
   private void addResult(int start, int end) {
-    results.add(new StandardTokenResult(startIndex + start, startIndex + end));
+    if (start != end) {
+      results.add(new StandardTokenResult(startIndex + start, startIndex + end));
+    }
   }
 
   static class StandardTokenResult implements TokenResult {
