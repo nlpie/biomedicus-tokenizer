@@ -17,7 +17,7 @@ To use in a maven project, include the following in your pom:
   <dependency>
     <groupId>edu.umn.biomedicus</groupId>
     <artifactId>biomedicus-tokenization</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
   </dependency>
 </dependencies>
 ```
