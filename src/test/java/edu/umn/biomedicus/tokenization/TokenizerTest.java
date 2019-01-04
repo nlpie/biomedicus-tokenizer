@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class TokenizerTest {
+public class TokenizerTest {
 
   private static final String SENTENCE = "This test's logic will confirm that the tokenizer (P.T.B.-like) is well-behaved.";
 
