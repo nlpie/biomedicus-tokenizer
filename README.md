@@ -1,5 +1,6 @@
+# Archived Project
 
-[![](https://travis-ci.org/nlpie/biomedicus-tokenizer.svg?branch=master)](https://travis-ci.org/nlpie/biomedicus-tokenizer)
+This project has been archived. For more information about BioMedICUS see the main project repository: https://github.com/nlpie/biomedicus
 
 # BioMedICUS Tokenizer
 
